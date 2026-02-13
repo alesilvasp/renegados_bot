@@ -1,37 +1,39 @@
 import sqlite3
 from datetime import datetime, timedelta, timezone
+import asyncpg
+import os
 
-DB_PATH = "database/bot.db"
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 
 class Database:
     def __init__(self):
-        self.conn = sqlite3.connect(DB_PATH)
-        self.conn.row_factory = sqlite3.Row
-        self.cursor = self.conn.cursor()
-        self._create_tables()
+        self.pool = None
 
-    def _create_tables(self):
-        # Planos ativos do usuário
-        self.cursor.execute("""
+    async def connect(self):
+        self.pool = await asyncpg.create_pool(DATABASE_URL)
+
+    async def _create_tables(self):
+
+        async with self.pool.acquire() as conn:
+            await conn.execute("""
         CREATE TABLE IF NOT EXISTS user_plans (
             user_id INTEGER PRIMARY KEY,
             plan_name TEXT NOT NULL,
             start_date TEXT NOT NULL,
             end_date TEXT NOT NULL
-        )
+        );
         """)
 
-        # Uso semanal de benefícios
-        self.cursor.execute("""
-        CREATE TABLE IF NOT EXISTS weekly_usage (
-            user_id INTEGER NOT NULL,
-            week_start TEXT NOT NULL,
-            action TEXT NOT NULL,
-            used INTEGER NOT NULL,
-            PRIMARY KEY (user_id, week_start, action)
-        )
-        """)
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS weekly_usage (
+                user_id BIGINT NOT NULL,
+                week_start DATE NOT NULL,
+                action TEXT NOT NULL,
+                used INT NOT NULL,
+                PRIMARY KEY (user_id, week_start, action)
+            );
+            """)
 
         self.conn.commit()
 

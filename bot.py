@@ -3,6 +3,9 @@ from discord.ext import commands
 from config import TOKEN, GUILD_ID
 from views.shop_view import ShopView
 from database.db import Database
+import os
+
+TOKEN = os.getenv("DISCORD_TOKEN")
 
 
 class Bot(commands.Bot):
@@ -12,9 +15,11 @@ class Bot(commands.Bot):
 
         super().__init__(command_prefix="!", intents=intents)
 
-        self.db = Database()
 
     async def setup_hook(self):
+        self.db = Database()
+        await self.db.connect()
+        await self.db._create_tables()
         # await self.tree.sync()  # sincroniza comandos globalmente
         await self.load_extension("cogs.quiz")
         await self.load_extension("cogs.util")

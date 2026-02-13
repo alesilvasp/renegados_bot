@@ -1,12 +1,8 @@
-import sqlite3
 from datetime import datetime, timedelta, timezone
 import asyncpg
 import os
 
 DATABASE_URL = os.getenv("DATABASE_URL")
-print("DATABASE_URL =", DATABASE_URL)
-if not DATABASE_URL:
-    raise RuntimeError("DATABASE_URL não definido")
 
 
 class Database:
@@ -14,102 +10,86 @@ class Database:
         self.pool = None
 
     async def connect(self):
-        self.pool = await asyncpg.create_pool(DATABASE_URL)
+        self.pool = await asyncpg.create_pool(
+        DATABASE_URL,
+        min_size=1,
+        max_size=5,
+        timeout=60,
+        command_timeout=60
+    )
 
     async def _create_tables(self):
-
         async with self.pool.acquire() as conn:
             await conn.execute("""
-        CREATE TABLE IF NOT EXISTS user_plans (
-            user_id INTEGER PRIMARY KEY,
-            plan_name TEXT NOT NULL,
-            start_date TEXT NOT NULL,
-            end_date TEXT NOT NULL
-        );
-        """)
-
-        await conn.execute("""
-            CREATE TABLE IF NOT EXISTS weekly_usage (
-                user_id BIGINT NOT NULL,
-                week_start DATE NOT NULL,
-                action TEXT NOT NULL,
-                used INT NOT NULL,
-                PRIMARY KEY (user_id, week_start, action)
-            );
+                CREATE TABLE IF NOT EXISTS user_plans (
+                    user_id BIGINT PRIMARY KEY,
+                    plan_name TEXT NOT NULL,
+                    start_date TIMESTAMPTZ NOT NULL,
+                    end_date TIMESTAMPTZ NOT NULL
+                );
             """)
 
-        self.conn.commit()
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS weekly_usage (
+                    user_id BIGINT NOT NULL,
+                    week_start DATE NOT NULL,
+                    action TEXT NOT NULL,
+                    used INT NOT NULL,
+                    PRIMARY KEY (user_id, week_start, action)
+                );
+            """)
 
-    # =========================
-    # UTILIDADES DE DATA
-    # =========================
     @staticmethod
     def get_week_start():
         today = datetime.now(timezone.utc)
         week_start = today - timedelta(days=today.weekday())
-        return week_start.date().isoformat()
+        return week_start.date()
 
-    # =========================
-    # PLANOS
-    # =========================
-    def set_user_plan(self, user_id: int, plan_name: str, duration_days: int):
+    async def set_user_plan(self, user_id: int, plan_name: str, duration_days: int):
         start = datetime.now(timezone.utc)
         end = start + timedelta(days=duration_days)
 
-        self.cursor.execute("""
-        INSERT OR REPLACE INTO user_plans (user_id, plan_name, start_date, end_date)
-        VALUES (?, ?, ?, ?)
-        """, (
-            user_id,
-            plan_name,
-            start.isoformat(),
-            end.isoformat()
-        ))
-        self.conn.commit()
+        async with self.pool.acquire() as conn:
+            await conn.execute("""
+                INSERT INTO user_plans (user_id, plan_name, start_date, end_date)
+                VALUES ($1, $2, $3, $4)
+                ON CONFLICT (user_id)
+                DO UPDATE SET
+                    plan_name = EXCLUDED.plan_name,
+                    start_date = EXCLUDED.start_date,
+                    end_date = EXCLUDED.end_date;
+            """, user_id, plan_name, start, end)
 
-    def get_user_plan(self, user_id: int):
-        self.cursor.execute("""
-        SELECT * FROM user_plans WHERE user_id = ?
-        """, (user_id,))
-        row = self.cursor.fetchone()
+    async def get_user_plan(self, user_id: int):
+        async with self.pool.acquire() as conn:
+            row = await conn.fetchrow("""
+                SELECT * FROM user_plans WHERE user_id = $1
+            """, user_id)
 
         if not row:
             return None
 
-        return {
-            "plan_name": row["plan_name"],
-            "start_date": datetime.fromisoformat(row["start_date"]),
-            "end_date": datetime.fromisoformat(row["end_date"])
-        }
+        return dict(row)
 
-    def remove_user_plan(self, user_id: int):
-        self.cursor.execute("""
-        DELETE FROM user_plans WHERE user_id = ?
-        """, (user_id,))
-        self.conn.commit()
-
-    # =========================
-    # USO SEMANAL
-    # =========================
-    def get_weekly_usage(self, user_id: int, action: str):
+    async def get_weekly_usage(self, user_id: int, action: str):
         week_start = self.get_week_start()
 
-        self.cursor.execute("""
-        SELECT used FROM weekly_usage
-        WHERE user_id = ? AND week_start = ? AND action = ?
-        """, (user_id, week_start, action))
+        async with self.pool.acquire() as conn:
+            row = await conn.fetchrow("""
+                SELECT used FROM weekly_usage
+                WHERE user_id = $1 AND week_start = $2 AND action = $3
+            """, user_id, week_start, action)
 
-        row = self.cursor.fetchone()
         return row["used"] if row else 0
 
-    def increment_weekly_usage(self, user_id: int, action: str):
+    async def increment_weekly_usage(self, user_id: int, action: str):
         week_start = self.get_week_start()
 
-        current = self.get_weekly_usage(user_id, action)
+        async with self.pool.acquire() as conn:
+            await conn.execute("""
+                INSERT INTO weekly_usage (user_id, week_start, action, used)
+                VALUES ($1, $2, $3, 1)
+                ON CONFLICT (user_id, week_start, action)
+                DO UPDATE SET used = weekly_usage.used + 1;
+            """, user_id, week_start, action)
 
-        self.cursor.execute("""
-        INSERT OR REPLACE INTO weekly_usage (user_id, week_start, action, used)
-        VALUES (?, ?, ?, ?)
-        """, (user_id, week_start, action, current + 1))
-
-        self.conn.commit()

@@ -6,7 +6,9 @@ from database.db import Database
 import os
 
 if not DISCORD_TOKEN:
-    raise RuntimeError("DISCORD_TOKEN não foi definido nas variáveis de ambiente!")
+    raise RuntimeError(
+        "DISCORD_TOKEN não foi definido nas variáveis de ambiente!")
+
 
 class Bot(commands.Bot):
     def __init__(self):
@@ -14,7 +16,6 @@ class Bot(commands.Bot):
         intents.message_content = True
 
         super().__init__(command_prefix="!", intents=intents)
-
 
     async def setup_hook(self):
         self.db = Database()
@@ -29,7 +30,6 @@ class Bot(commands.Bot):
         await self.load_extension("cogs.meuplano")
         await self.load_extension("cogs.mapa")
         await self.load_extension("cogs.auto_reply")
-        
 
         self.add_view(ShopView(self.db))
 
@@ -40,8 +40,14 @@ class Bot(commands.Bot):
         else:
             await self.tree.sync()
 
+    async def close(self):
+        if hasattr(self, "db") and self.db.pool:
+            await self.db.pool.close()
+        await super().close()
+
 
 bot = Bot()
+
 
 @bot.event
 async def on_ready():

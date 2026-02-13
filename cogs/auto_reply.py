@@ -1,7 +1,8 @@
 from discord.ext import commands
 import time
 
-class AutoReplyTarada(commands.Cog):
+
+class AutoReply(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.cooldowns = {}
@@ -11,21 +12,32 @@ class AutoReplyTarada(commands.Cog):
             326820084817592321: "Cuidado ao marcar a tarada do Acre! Chame outro! 😂",
             1236994843755024464: "Nhocco tá ocupado sempre! Chame outro! 😂",
             275705864818524160: "Op é PJ (Pessoa Judiada)! Se não está trabalhando, está dormindo. Chame outro! 😂",
+            "everyone": "Para de marcar geral! Chama no PV, por favor!"
         }
 
     @commands.Cog.listener()
     async def on_message(self, message):
+
+        print("mensagem:", message.content)
+        if "😉" in message.content:
+            await message.channel.send("Vai piscar pra suas negas!")
         # Ignora mensagens do próprio bot
         if message.author.bot:
             return
-        
-        #ignora se for respostas
+
+        # ignora se for respostas
         if message.reference is not None:
             return
-        
+
+        if message.mention_everyone:
+
+            if "everyone" in self.targets:
+                await message.channel.send(self.targets["everyone"])
+
+            return
         if not message.mentions:
             return
-        
+
         now = time.time()
         channel_id = message.channel.id
 
@@ -45,5 +57,6 @@ class AutoReplyTarada(commands.Cog):
         if "sexo" in content:
             await message.channel.send("Cuidado com suas palavras, Mitarada!")
 
+
 async def setup(bot):
-    await bot.add_cog(AutoReplyTarada(bot))
+    await bot.add_cog(AutoReply(bot))

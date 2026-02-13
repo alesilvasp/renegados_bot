@@ -13,6 +13,7 @@ ENV = os.getenv("ENV", "development")
 print("ENV =", os.getenv("ENV"))
 print("DATABASE_URL carregado?", bool(os.getenv("DATABASE_URL")))
 
+
 class Bot(commands.Bot):
     def __init__(self):
         intents = discord.Intents.default()
@@ -38,6 +39,7 @@ class Bot(commands.Bot):
         await self.load_extension("cogs.meuplano")
         await self.load_extension("cogs.mapa")
         await self.load_extension("cogs.auto_reply")
+        await self.load_extension("cogs.auto_announce")
 
         self.add_view(ShopView(self.db))
 

@@ -9,6 +9,9 @@ if not DISCORD_TOKEN:
     raise RuntimeError(
         "DISCORD_TOKEN não foi definido nas variáveis de ambiente!")
 
+ENV = os.getenv("ENV", "development")
+print("ENV =", os.getenv("ENV"))
+print("DATABASE_URL carregado?", bool(os.getenv("DATABASE_URL")))
 
 class Bot(commands.Bot):
     def __init__(self):
@@ -19,8 +22,13 @@ class Bot(commands.Bot):
 
     async def setup_hook(self):
         self.db = Database()
-        await self.db.connect()
-        await self.db._create_tables()
+        try:
+            await self.db.connect()
+        except Exception as e:
+            print("ERRO AO CONECTAR NO BANCO:", e)
+
+        if ENV == "development":
+            await self.db._create_tables()
         # await self.tree.sync()  # sincroniza comandos globalmente
         await self.load_extension("cogs.quiz")
         await self.load_extension("cogs.util")

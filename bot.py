@@ -1,11 +1,11 @@
 import discord
 from discord.ext import commands
-from config import TOKEN, GUILD_ID
+from config import DISCORD_TOKEN, GUILD_ID
 from views.shop_view import ShopView
 from database.db import Database
 import os
 
-if not TOKEN:
+if not DISCORD_TOKEN:
     raise RuntimeError("DISCORD_TOKEN não foi definido nas variáveis de ambiente!")
 
 class Bot(commands.Bot):
@@ -48,4 +48,4 @@ async def on_ready():
     print(f"Conectado como {bot.user}")
 
 
-bot.run(TOKEN)
+bot.run(DISCORD_TOKEN)

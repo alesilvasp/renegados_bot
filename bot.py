@@ -5,8 +5,6 @@ from views.shop_view import ShopView
 from database.db import Database
 import os
 
-TOKEN = os.getenv("DISCORD_TOKEN")
-
 
 class Bot(commands.Bot):
     def __init__(self):

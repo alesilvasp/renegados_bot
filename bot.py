@@ -5,6 +5,8 @@ from views.shop_view import ShopView
 from database.db import Database
 import os
 
+if not TOKEN:
+    raise RuntimeError("DISCORD_TOKEN não foi definido nas variáveis de ambiente!")
 
 class Bot(commands.Bot):
     def __init__(self):

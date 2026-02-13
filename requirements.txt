@@ -1,5 +1,4 @@
 discord.py
-python-dotenv
 asyncpg
-psycopg[binary]
-requests
+python-dotenv
+psycopg2-binary

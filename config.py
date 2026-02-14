@@ -7,6 +7,8 @@ DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 GUILD_ID = os.getenv("GUILD_ID")
 DATABASE_URL = os.getenv("DATABASE_URL")
 ENV = os.getenv("ENV", "development")
+CHANNEL_ANNOUNCE = 1463563610482806855
+CHANNEL_VOICE_PANEL = 1472182125728895027
 
 if ENV == "development":
     print("Rodando em DEV")

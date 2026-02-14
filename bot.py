@@ -40,6 +40,7 @@ class Bot(commands.Bot):
         await self.load_extension("cogs.mapa")
         await self.load_extension("cogs.auto_reply")
         await self.load_extension("cogs.auto_announce")
+        await self.load_extension("cogs.voice_panel")
 
         self.add_view(ShopView(self.db))
 

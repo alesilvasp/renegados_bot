@@ -9,10 +9,11 @@ class AutoReply(commands.Cog):
 
         self.targets = {
             266565950067834882: "Não marque o Andrey, chame outro!",
-            326820084817592321: "Cuidado ao marcar a tarada do Acre! Chame outro! 😂",
+            326820084817592321: "Se eu fosse você não chamaria ela não... Chame outro! 😂",
             1236994843755024464: "Nhocco tá ocupado sempre! Chame outro! 😂",
             275705864818524160: "Op é PJ (Pessoa Judiada)! Se não está trabalhando, está dormindo. Chame outro! 😂",
-            "everyone": "Para de marcar geral! Chama no PV, por favor!"
+            "everyone": "Para de marcar geral! Chama no PV, por favor!",
+            718126022935052379: "Vc quis dizer Cesta Básica de Alimentos?"
         }
 
     @commands.Cog.listener()

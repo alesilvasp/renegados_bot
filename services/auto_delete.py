@@ -13,10 +13,7 @@ async def auto_delete_if_empty(channel, dynamic_channels: set, timeout: int = 20
         await asyncio.sleep(1)
         if len(channel.members) > 0:
             return
-        loading_bar = barra_loading(timeout, 20, tamanho=10)
 
-        try:
-            await msg.edit
     if len(channel.members) == 0:
         await channel.delete()
         dynamic_channels.discard(channel.id)

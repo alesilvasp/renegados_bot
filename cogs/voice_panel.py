@@ -1,13 +1,8 @@
-from views import call_view
 import discord
 from discord.ext import commands
-
-embed = discord.Embed(
-    title="Crie a sala de voz do seu dino",
-    description=("Clique no botão abaixo para criar sua própria sala!\n"
-                 "Escolha a categoria, qual o dino e convide seus amigos!\n\n"),
-    color=discord.Color.green()
-)
+from embed.announceVoicePanel import announce_voice_panel
+from views.call_view import VoicePanelView
+from config import CHANNEL_VOICE_PANEL
 
 
 class VoicePanel(commands.Cog):
@@ -24,17 +19,15 @@ class VoicePanel(commands.Cog):
 
     @discord.app_commands.command(name="painelcall", description="Envia o painel de criação de salas de voz")
     async def painelcall(self, interaction: discord.Interaction):
-
-        print(interaction.guild.me.guild_permissions)
-
-        await interaction.response.send_message(embed=embed, view=call_view.VoicePanelView())
+        await interaction.response.send_message(
+            embed=announce_voice_panel,
+            view=VoicePanelView(self)
+        )
 
     async def announce(self):
-        channel = self.bot.get_channel(1472182125728895027)
-        if not channel:
-            return
-
-        await channel.send(embed=embed)
+        channel = self.bot.get_channel(CHANNEL_VOICE_PANEL)
+        if channel:
+            await channel.send(embed=announce_voice_panel, view=VoicePanelView(self))
 
 
 async def setup(bot):

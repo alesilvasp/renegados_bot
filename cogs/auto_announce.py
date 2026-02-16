@@ -4,7 +4,7 @@ from discord import app_commands
 from views.call_view import VoicePanelView
 from embed.announceServer import announce_server
 from embed.announceVoicePanel import announce_voice_panel
-from config import CHANNEL_ANNOUNCE, CHANNEL_VOICE_PANEL
+from config import CHANNEL_ANNOUNCE, CHANNEL_VOICE_PANEL, CHANNEL_TEST
 
 INTERVAL_HOURS = 6  # tempo entre mensagens
 
@@ -29,7 +29,8 @@ class AutoAnnounce(commands.Cog):
 
     @tasks.loop(hours=INTERVAL_HOURS)
     async def announce(self):
-        channel = self.bot.get_channel(CHANNEL_ANNOUNCE)
+        # MUDAR PARA CHAT GERAL DEPOIS
+        channel = self.bot.get_channel(CHANNEL_TEST)
         if not channel:
             return
 
@@ -54,8 +55,11 @@ class AutoAnnounce(commands.Cog):
                 embed = msg.embeds[0]
                 if embed.title == announce_voice_panel.title:
                     await msg.delete()
-
-        await channel.send(embed=announce_voice_panel, view=VoicePanelView())
+        voice_cog = self.bot.get_cog("VoicePanel")
+        if not voice_cog:
+            print("❌ Cog VoicePanel não carregado.")
+            return
+        await channel.send(embed=announce_voice_panel, view=VoicePanelView(voice_cog))
         self._sent_on_ready = True
 
 
